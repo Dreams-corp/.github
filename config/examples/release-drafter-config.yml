@@ -3,24 +3,24 @@ tag-template: 'v$RESOLVED_VERSION'
 
 
 categories:
-  - title: '💥 Breaking Changes'
-    labels:
-      - breaking-change
-  - title: '🚀 New Features'
-    labels:
-      - feature
-      - enhancement
-  - title: '🐞 Bug Fixes'
-    labels:
-      - bug
-      - fix
-      - bugfix
-  - title: '⚙️ Technical Debt'
-    labels:
-      - refactor
-  - title: '📝 Documentation'
-    labels:
-      - documentation
+- title: '💥 Breaking Changes'
+  labels:
+  - breaking-change
+- title: '🚀 New Features'
+  labels:
+  - feature
+  - enhancement
+- title: '🐞 Bug Fixes'
+  labels:
+  - bug
+  - fix
+  - bugfix
+- title: '⚙️ Technical Debt'
+  labels:
+  - refactor
+- title: '📝 Documentation'
+  labels:
+  - documentation
 
 change-template: '- $TITLE (#$NUMBER) by @$AUTHOR'
 no-changes-template: 'No significant changes'
@@ -36,12 +36,12 @@ template: |
 version-resolver:
   major:
     labels:
-      - major
+    - major
   minor:
     labels:
-      - minor
+    - minor
   patch:
     labels:
-      - patch
+    - patch
   default: patch
   
