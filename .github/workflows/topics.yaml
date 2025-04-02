@@ -9,7 +9,23 @@ on:
           If empty all organization repos will be updated.
         required: true
         default: 'Netcracker'
+
+    
 jobs:
+  verify-json:
+    env:
+      JSON_FILE: "./confit/org-mandatory-topcs/topics.json"
+      CONFIG_SCHEMA: "./confit/org-mandatory-topcs/config-schema.json"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify JSON file
+        uses: netcracker/qubership-workflow-hub/actions/verify-json
+        with:
+          json-file: ${{ env.JSON_FILE }}
+          schema-file: ${{ env.CONFIG_SCHEMA }}
   update-topics:
     runs-on: ubuntu-latest
 
@@ -19,31 +35,27 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2 Validate json file
-      - name: Validate repositoryName fields
+      - name: Validate topic config file
         run: |
-            JSON_FILE="./config/topics.json"
             INVALID_ENTRIES=$(jq -r '.[] | select(.repositoryName | contains(",")) | .repositoryName' "$JSON_FILE")
 
-            if [ ! -f "$JSON_FILE" ]; then
+            if [ ! -f ${{ env.JSON_FILE }} ]; then
             echo "Error: topics.json file not found!"
             exit 1
             fi
 
-            if [ -n "$INVALID_ENTRIES" ]; then
-            echo "Invalid repositoryName entries found:"
-            echo "$INVALID_ENTRIES"
-            echo "Please ensure each repositoryName contains only one value."
-            exit 1
+            if [ -n "$DUPLICATES" ]; then
+              echo "Duplicate repositoryName values found:"
+              echo "$DUPLICATES"
+              exit 1
             else
-            echo "All repositoryName fields are valid."
+              echo "All repositoryName values are unique."
             fi
       # Step 3: Update repository topics
       - name: Update Topics
         run: |
-          JSON_FILE="./config/topics.json"
-
           # Loop through each repository in the JSON file
-          jq -c '.[]' "$JSON_FILE" | while read -r repo; do
+          jq -c '.[]' ${{ env.JSON_FILE }} | while read -r repo; do
             REPO_NAME=$(echo "$repo" | jq -r '.repositoryName')
             TOPICS=$(echo "$repo" | jq -r '.repositoryTopics[].name' | paste -sd "," -)
 
