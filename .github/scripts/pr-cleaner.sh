@@ -5,16 +5,16 @@
 # Additionally, it can remove orphan branches with a specified prefix.
 
 # Input arguments
-ORG_NAME=$1                # GitHub organization name
-BRANCH_NAME_PREFIX=$2      # Prefix for branch names to target
-BRANCH_DELETE=$3           # Whether to delete branches after closing PRs (true/false)
-REMOVE_ORPHAN_BRANCHES=$4  # Whether to remove orphan branches with the specified prefix (true/false)
-TARGET_REPO=$5             # Specific repository to target (optional)
-COMMENT=$6                 # Comment to add when closing PRs
+ORG_NAME=$1               # GitHub organization name
+BRANCH_NAME_PREFIX=$2     # Prefix for branch names to target
+BRANCH_DELETE=$3          # Whether to delete branches after closing PRs (true/false)
+REMOVE_ORPHAN_BRANCHES=$4 # Whether to remove orphan branches with the specified prefix (true/false)
+TARGET_REPO=$5            # Specific repository to target (optional)
+COMMENT=$6                # Comment to add when closing PRs
 
 # Determine the list of repositories to process
 if [ -n "$TARGET_REPO" ]; then
-    repos="$TARGET_REPO"  # Use the specified repository
+    repos="$TARGET_REPO" # Use the specified repository
 else
     # Fetch all public repositories in the organization
     repos=$(gh repo list "$ORG_NAME" --visibility public --limit 1000 --json name --jq '.[].name')
@@ -46,7 +46,7 @@ for repo in $repos; do
         for branch in $orphan_branches; do
             echo "Deleting orphan branch: $branch"
             gh api -X DELETE repos/"$ORG_NAME"/"$repo"/git/refs/heads/"$branch"
-            sleep 3s  # Pause to avoid hitting API rate limits
+            sleep 3s # Pause to avoid hitting API rate limits
         done
     fi
 done
