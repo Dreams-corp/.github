@@ -53,6 +53,6 @@ jobs:
           "${{ github.event.inputs.remove_orphant_branches }}" \
           "${{ github.event.inputs.target_repo }}" \
           "${{ github.event.inputs.comment }}" \
-          "${{ gsecrets.GH_ACCESS_TOKEN }}"
+          "${{ secrets.GH_ACCESS_TOKEN }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
