@@ -13,6 +13,9 @@ TARGET_REPO=$5            # Specific repository to target (optional)
 COMMENT=$6                # Comment to add when closing PRs
 GITHUB_TOKEN=$7           # GitHub token for authentication
 
+# Authenticate GitHub CLI using the provided token
+    echo "$GITHUB_TOKEN" | gh auth login --with-token
+
 # Determine the list of repositories to process
 if [ -n "$TARGET_REPO" ]; then
     repos="$TARGET_REPO" # Use the specified repository
