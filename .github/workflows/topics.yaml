@@ -11,32 +11,26 @@ on:
         default: 'Netcracker'
 
 jobs:
-  verify-json:
-    env:
-      JSON_FILE: "./confit/org-mandatory-topcs/topics.json"
-      CONFIG_SCHEMA: "./confit/org-mandatory-topcs/config-schema.json"
+  update-topics:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify JSON file
+      - name: Verify JSON File
         uses: netcracker/qubership-workflow-hub/actions/verify-json@main
         with:
           json-file: ${{ env.JSON_FILE }}
           schema-file: ${{ env.CONFIG_SCHEMA }}
-  update-topics:
-    runs-on: ubuntu-latest
-    needs: verify-json
-    steps:
-      - name: Validate topic config file
+      - name: Check repo duplicates
         run: |
             # Check if the JSON file exists
             if [ ! -f ${{ env.JSON_FILE }} ]; then
             echo "Error: topics.json file not found!"
             exit 1
             fi
-
+            # Check if the JSON contains repositoryName duplicates
+            DUPLICATES=$(jq -r '.[].repositoryName' ${{ env.JSON_FILE }} | sort | uniq -d)
             if [ -n "$DUPLICATES" ]; then
               echo "Duplicate repositoryName values found:"
               echo "$DUPLICATES"
@@ -44,7 +38,6 @@ jobs:
             else
               echo "All repositoryName values are unique."
             fi
-      # Step 3: Update repository topics
       - name: Update Topics
         run: |
           # Loop through each repository in the JSON file
@@ -64,3 +57,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
           GH_ORG: ${{ github.event.inputs.org_name }}
+          JSON_FILE: "./confit/org-mandatory-topcs/topics.json"
+          CONFIG_SCHEMA: "./confit/org-mandatory-topcs/config-schema.json"
