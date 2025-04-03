@@ -46,43 +46,12 @@ jobs:
 
       # Step 2 Setup Pull Request Cleaner
       - name: Setup Pull Request Cleaner
-        run: |
-            if [ -n "${{ github.event.inputs.target_repo }}" ]; then
-              repos="${{ github.event.inputs.target_repo }}"
-            else
-              repos=$(gh repo list ${{ github.event.inputs.org_name }} --visibility public --limit 1000 --json name --jq '.[].name')
-            fi
-
-            for repo in $repos; do
-              echo "Processing repository: $repo"
-
-              # Get open pull requests with branch names containing the specified prefix
-              prs=$(gh pr list --repo "${{ github.event.inputs.org_name }}/$repo" --state open --json number,headRefName --jq '.[] | select(.headRefName | contains("${{ github.event.inputs.branch_name_prefix }}")) | .number')
-
-              for pr in $prs; do
-                echo "Closing PR #$pr in $repo"
-
-                # Close the pull request with a comment
-                if [ "${{ github.event.inputs.branch_delete }}" = "true" ]; then
-                  gh pr close "$pr" --repo "${{ github.event.inputs.org_name }}/$repo" --delete-branch --comment "${{ github.event.inputs.comment }}"
-                else
-                  gh pr close "$pr" --repo "${{ github.event.inputs.org_name }}/$repo" --comment "${{ github.event.inputs.comment }}"
-                fi
-              done
-
-              # Remove orphan branches if specified
-              if [ "${{ github.event.inputs.remove_orphant_branches }}" = "true" ] && [ -n "${{ github.event.inputs.branch_name_prefix }}" ]; then
-                echo "Removing orphan branches in $repo with prefix '${{ github.event.inputs.branch_name_prefix }}'"
-                orphan_branches=$(gh api repos/${{ github.event.inputs.org_name }}/$repo/branches --jq '.[] | select(.name | startswith("${{ github.event.inputs.branch_name_prefix }}")) | .name')
-
-                for branch in $orphan_branches; do
-                  echo "Deleting orphan branch: $branch"
-                  gh api -X DELETE repos/${{ github.event.inputs.org_name }}/$repo/git/refs/heads/$branch
-                  sleep 3s
-                done
-              fi
-            done
-
-            echo "Pull request cleanup completed."
+        run: bash .github/scripts/pr-cleaner.sh \
+          "${{ github.event.inputs.org_name }}" \
+          "${{ github.event.inputs.branch_name_prefix }}" \
+          "${{ github.event.inputs.branch_delete }}" \
+          "${{ github.event.inputs.remove_orphant_branches }}" \
+          "${{ github.event.inputs.target_repo }}" \
+          "${{ github.event.inputs.comment }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
