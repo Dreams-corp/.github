@@ -26,7 +26,7 @@ for repo in $repos; do
     echo "Processing repository: $repo"
 
     # Get open pull requests with branch names containing the specified prefix
-    prs=$(gh pr list --repo "$ORG_NAME/$repo" --state open --json number,headRefName --jq ".[] | select(.headRefName | contains(\"$BRANCH_NAME_PREFIX\")) | .number")
+    prs=$(gh pr list --repo "$ORG_NAME"/"$repo" --state open --json number,headRefName --jq ".[] | select(.headRefName | contains(\"$BRANCH_NAME_PREFIX\")) | .number")
 
     for pr in $prs; do
         echo "Closing PR #$pr in $repo"
