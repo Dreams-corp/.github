@@ -11,6 +11,7 @@ BRANCH_DELETE=$3          # Whether to delete branches after closing PRs (true/f
 REMOVE_ORPHAN_BRANCHES=$4 # Whether to remove orphan branches with the specified prefix (true/false)
 TARGET_REPO=$5            # Specific repository to target (optional)
 COMMENT=$6                # Comment to add when closing PRs
+GITHUB_TOKEN=$7               # GitHub token for authentication
 
 # Determine the list of repositories to process
 if [ -n "$TARGET_REPO" ]; then
