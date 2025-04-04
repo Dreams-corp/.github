@@ -4,62 +4,55 @@ on:
   workflow_dispatch: # Allows manual triggering of the workflow
     inputs:
       org_name:
-        description: >-
-          Name of GitHub organization.
+        description: GitHub organization name
         required: true
         default: 'Netcracker'
       branch_name_prefix:
-        description: >-
-          Prefix of the branch name to be deleted.
+        description: Prefix for branch names to target
         required: true
         default: 'bot/'
       branch_delete:
-        description: >-
-          Whether to delete the branch after closing the PR.
-          If true, the branch will be deleted.
+        description: Delete branches after closing PRs? (true/false)
         required: false
         default: 'true'
-      remove_orphant_branches:
-        description: >-
-          Whether to remove orphan branches.
-          If true, the branches not related to PRs will be removed.
+      remove_orphan_branches:
+        description: Remove orphan branches with given prefix? (true/false)
         required: false
         default: 'false'
       target_repo:
-        description: >-
-          Name of the target repository.
-          If empty all organization repos will be updated.
+        description: Specific repository to process (leave blank for all)
         required: false
+        default: ''
       comment:
-        description: >-
-          Comment to be added when closing the PR.
+        description: Comment when closing PRs
         required: true
         default: 'This PR is closed as part of the cleanup process.'
       dry_run:
-        description: >-
-          Whether to run the script in dry run mode.
-          If true, no changes will be made.
+        description: Run without making changes? (true/false)
         required: false
         default: 'false'
+
 jobs:
   pull_request_cleanup:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2 Setup Pull Request Cleaner
-      - name: Setup Pull Request Cleaner
-        run: bash .github/scripts/pr-cleaner.sh \
-          "${{ github.event.inputs.org_name }}" \
-          "${{ github.event.inputs.branch_name_prefix }}" \
-          "${{ github.event.inputs.branch_delete }}" \
-          "${{ github.event.inputs.remove_orphant_branches }}" \
-          "${{ github.event.inputs.target_repo }}" \
-          "${{ github.event.inputs.comment }}" \
-          "${{ secrets.GH_ACCESS_TOKEN }}" \
-          "${{ github.event.inputs.dry_run }}"
+      - name: Make script executable
+        run: chmod +x .github/scripts/pr-cleaner.sh
+
+      - name: Run Pull Request Cleaner
+        run: |
+          bash .github/scripts/pr-cleaner.sh \
+            "${{ github.event.inputs.org_name }}" \
+            "${{ github.event.inputs.branch_name_prefix }}" \
+            "${{ github.event.inputs.branch_delete }}" \
+            "${{ github.event.inputs.remove_orphan_branches }}" \
+            "${{ github.event.inputs.target_repo }}" \
+            "${{ github.event.inputs.comment }}" \
+            "${{ secrets.GH_ACCESS_TOKEN }}" \
+            "${{ github.event.inputs.dry_run }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
