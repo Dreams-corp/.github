@@ -1,61 +1,83 @@
 name: Update Repository Topics
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
     inputs:
       org_name:
-        description: >-
-          Name of GitHub organization.
-          If empty all organization repos will be updated.
+        description: "Name of GitHub organization (leave empty to use default)"
         required: true
-        default: 'Netcracker'
+        default: "Netcracker"
+      repo_name:
+        description: "Specific repository to update (leave empty to update all)"
+        required: false
+        default: ""
+
 jobs:
   update-topics:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2 Validate json file
-      - name: Validate repositoryName fields
-        run: |
-            JSON_FILE="./config/topics.json"
-            INVALID_ENTRIES=$(jq -r '.[] | select(.repositoryName | contains(",")) | .repositoryName' "$JSON_FILE")
-
-            if [ ! -f "$JSON_FILE" ]; then
-            echo "Error: topics.json file not found!"
-            exit 1
-            fi
-
-            if [ -n "$INVALID_ENTRIES" ]; then
-            echo "Invalid repositoryName entries found:"
-            echo "$INVALID_ENTRIES"
-            echo "Please ensure each repositoryName contains only one value."
-            exit 1
-            else
-            echo "All repositoryName fields are valid."
-            fi
-      # Step 3: Update repository topics
-      - name: Update Topics
+      - name: Validate and Update Topics
         run: |
           JSON_FILE="./config/topics.json"
 
-          # Loop through each repository in the JSON file
-          jq -c '.[]' "$JSON_FILE" | while read -r repo; do
-            REPO_NAME=$(echo "$repo" | jq -r '.repositoryName')
-            TOPICS=$(echo "$repo" | jq -r '.repositoryTopics[].name' | paste -sd "," -)
+          if [ ! -f "$JSON_FILE" ]; then
+            echo "::error ::topics.json file not found!"
+            exit 1
+          fi
 
-            if [ -n "$TOPICS" ]; then
-              echo "Updating topics for $REPO_NAME: $TOPICS"
-              if ! gh repo edit "$GH_ORG"/"$REPO_NAME" --add-topic "$TOPICS"; then
-            echo "Error: Repository $REPO_NAME does not exist or could not be updated. Skipping."
-              fi
-            else
-              echo "No topics found for $REPO_NAME. Skipping."
+          # Validate repositoryName fields
+          INVALID_ENTRIES=$(jq -r '.[] | select(.repositoryName | contains(",")) | .repositoryName' "$JSON_FILE")
+
+          if [ -n "$INVALID_ENTRIES" ]; then
+            echo "::error ::Invalid repositoryName entries detected:"
+            echo "$INVALID_ENTRIES"
+            exit 1
+          else
+            echo "All repositoryName fields are valid."
+          fi
+
+          # Check if a specific repository is provided
+          if [ -n "${{ github.event.inputs.repo_name }}" ]; then
+            echo "Updating topics for a single repository: ${{ github.event.inputs.repo_name }}"
+            REPO_NAME="${{ github.event.inputs.repo_name }}"
+            REPO_ENTRY=$(jq -c '.[] | select(.repositoryName=="'"$REPO_NAME"'")' "$JSON_FILE")
+
+            if [ -z "$REPO_ENTRY" ]; then
+              echo "::error ::Repository $REPO_NAME not found in topics.json"
+              exit 1
             fi
-          done
+
+            TOPICS=$(echo "$REPO_ENTRY" | jq -r '.repositoryTopics[].name' | paste -sd "," -)
+
+            if [ -z "$TOPICS" ]; then
+              echo "::warning ::No topics found for $REPO_NAME. Skipping."
+              exit 0
+            fi
+
+            echo "Updating topics for $REPO_NAME: $TOPICS"
+            gh repo edit "$GH_ORG/$REPO_NAME" --add-topic "$TOPICS" || echo "::warning ::Error updating $REPO_NAME. Skipping."
+
+          else
+            # Process all repositories
+            jq -c '.[]' "$JSON_FILE" | while read -r repo; do
+              REPO_NAME=$(echo "$repo" | jq -r '.repositoryName')
+              TOPICS=$(echo "$repo" | jq -r '.repositoryTopics[].name' | paste -sd "," -)
+
+              if [ -z "$TOPICS" ]; then
+                echo "No topics found for $REPO_NAME. Skipping."
+                continue
+              fi
+
+              echo "Updating topics for $REPO_NAME: $TOPICS"
+              if ! gh repo edit "$GH_ORG/$REPO_NAME" --add-topic "$TOPICS"; then
+                echo "::warning ::Error updating $REPO_NAME. Skipping."
+              fi
+            done
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
           GH_ORG: ${{ github.event.inputs.org_name }}
