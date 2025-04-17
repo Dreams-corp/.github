@@ -1,0 +1,9 @@
+{
+  "name": "Qubership Markdown Linkspector",
+  "description": "Markdown Linkspector workflow template. It can be used to check for broken links in markdown files.",
+
+  "categories": [
+      "Automation"
+  ],
+  "labels": [ "preview"]
+}
